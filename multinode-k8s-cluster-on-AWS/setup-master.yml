@@ -1,0 +1,4 @@
+---
+- hosts: all
+  roles:
+    - role: k8s_master_conf
