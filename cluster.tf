@@ -21,13 +21,13 @@ resource "aws_instance" "k8s_master" {
     connection {
       host        = self.public_ip
       type        = "ssh"
-      user        = "ec2-user"
+      user        = var.user
       private_key = file(var.private_key_path)
     }
   }
 
   provisioner "local-exec" {
-    command = "ANSIBLE_HOST_KEY_CHECKING=False ANSIBLE_ASK_PASS=False ANSIBLE_BECOME_METHOD=sudo ANSIBLE_BECOME_ASK_PASS=False ansible-playbook -u ec2-user -i '${self.public_ip},' --private-key ${var.private_key_path} multinode-k8s-cluster-on-AWS/setup-master.yml --become -v"
+    command = "ANSIBLE_HOST_KEY_CHECKING=False ANSIBLE_ASK_PASS=False ANSIBLE_BECOME_METHOD=sudo ANSIBLE_BECOME_ASK_PASS=False ansible-playbook -u ${var.user} -i '${self.public_ip},' --private-key ${var.private_key_path} multinode-k8s-cluster-on-AWS/setup-master.yml --become -v"
   }
 }
 
@@ -58,13 +58,12 @@ resource "aws_instance" "k8s_workers" {
     connection {
       host        = self.public_ip
       type        = "ssh"
-      user        = "ec2-user"
+      user        = var.user
       private_key = file(var.private_key_path)
     }
   }
 
   provisioner "local-exec" {
-    command = "ANSIBLE_HOST_KEY_CHECKING=False ANSIBLE_ASK_PASS=False ANSIBLE_BECOME_METHOD=sudo ANSIBLE_BECOME_ASK_PASS=False ansible-playbook -u ec2-user -i '${self.public_ip},' --private-key ${var.private_key_path} multinode-k8s-cluster-on-AWS/setup-worker.yml --become -v"
+    command = "ANSIBLE_HOST_KEY_CHECKING=False ANSIBLE_ASK_PASS=False ANSIBLE_BECOME_METHOD=sudo ANSIBLE_BECOME_ASK_PASS=False ansible-playbook -u ${var.user} -i '${self.public_ip},' --private-key ${var.private_key_path} multinode-k8s-cluster-on-AWS/setup-worker.yml --become -v"
   }
-
 }

@@ -99,3 +99,9 @@ variable "worker_node_count" {
   type        = number
   default     = 2
 }
+
+variable "user" {
+  description = "User name used to login to cluster nodes for configuration"
+  type        = string
+  default     = "ec2-user"
+}
