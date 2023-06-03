@@ -40,12 +40,6 @@ variable "key_name" {
   default     = "k8s-key-ansible"
 }
 
-variable "k8s_master_security_group_id" {
-  description = "K8s master SG id"
-  type        = list(string)
-  default     = ["sg-0708f34c78b3ebefb"]
-}
-
 variable "k8s_master_volume_size" {
   description = "K8s master volume size"
   type        = string
@@ -80,12 +74,6 @@ variable "k8s_worker_instance_type" {
   description = "K8s worker node instance type"
   type        = string
   default     = "t2.medium"
-}
-
-variable "k8s_worker_security_group_id" {
-  description = "K8s worker SG id"
-  type        = list(string)
-  default     = ["sg-0708f34c78b3ebefb"]
 }
 
 variable "k8s_worker_volume_size" {
