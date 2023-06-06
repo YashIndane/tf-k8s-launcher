@@ -1,3 +1,27 @@
+#Creating SSH keys for K8S Master and Worker Nodes
+resource "tls_private_key" "k8s_ssh_key" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+
+resource "aws_key_pair" "generated_k8s_ssh_key" {
+  depends_on = [
+    tls_private_key.k8s_ssh_key
+  ]
+  key_name   = "gen_k8s_ssh_key"
+  public_key = tls_private_key.k8s_ssh_key.public_key_openssh
+
+  #Store private key
+  provisioner "local-exec" {
+    command = <<-EOT
+      echo '${tls_private_key.k8s_ssh_key.private_key_pem}' > k8s_ssh_key.pem
+      chmod 400 k8s_ssh_key.pem
+    EOT
+  }
+}
+
+
 #Creating security group of K8S Master Node
 resource "aws_security_group" "k8s_master_security_group" {
   name        = "k8s-master-security-group"
@@ -110,12 +134,13 @@ resource "aws_security_group" "k8s_worker_security_group" {
 resource "aws_instance" "k8s_master" {
   depends_on = [
     aws_security_group.k8s_master_security_group,
-    aws_security_group.k8s_worker_security_group
+    aws_security_group.k8s_worker_security_group,
+    aws_key_pair.generated_k8s_ssh_key
   ]
   ami                    = var.k8s_master_ami
   instance_type          = var.k8s_master_instance_type
   subnet_id              = var.subnet_id
-  key_name               = var.key_name
+  key_name               = "gen_k8s_ssh_key"
   vpc_security_group_ids = [aws_security_group.k8s_master_security_group.id]
 
   root_block_device {
@@ -123,7 +148,7 @@ resource "aws_instance" "k8s_master" {
   }
 
   tags = {
-    Name = var.k8s_master_name
+    Name = "k8s-master"
   }
 
   provisioner "remote-exec" {
@@ -133,12 +158,12 @@ resource "aws_instance" "k8s_master" {
       host        = self.public_ip
       type        = "ssh"
       user        = var.user
-      private_key = file(var.private_key_path)
+      private_key = tls_private_key.k8s_ssh_key.private_key_pem
     }
   }
 
   provisioner "local-exec" {
-    command = "ANSIBLE_HOST_KEY_CHECKING=False ANSIBLE_ASK_PASS=False ANSIBLE_BECOME_METHOD=sudo ANSIBLE_BECOME_ASK_PASS=False ansible-playbook -u ${var.user} -i '${self.public_ip},' --private-key ${var.private_key_path} multinode-k8s-cluster-on-AWS/setup-master.yml --become -v"
+    command = "ANSIBLE_HOST_KEY_CHECKING=False ANSIBLE_ASK_PASS=False ANSIBLE_BECOME_METHOD=sudo ANSIBLE_BECOME_ASK_PASS=False ansible-playbook -u ${var.user} -i '${self.public_ip},' --private-key k8s_ssh_key.pem multinode-k8s-cluster-on-AWS/setup-master.yml --become -v"
   }
 }
 
@@ -152,7 +177,7 @@ resource "aws_instance" "k8s_workers" {
   ami                    = var.k8s_worker_ami
   instance_type          = var.k8s_worker_instance_type
   subnet_id              = var.subnet_id
-  key_name               = var.key_name
+  key_name               = "gen_k8s_ssh_key"
   vpc_security_group_ids = [aws_security_group.k8s_worker_security_group.id]
 
   root_block_device {
@@ -170,11 +195,11 @@ resource "aws_instance" "k8s_workers" {
       host        = self.public_ip
       type        = "ssh"
       user        = var.user
-      private_key = file(var.private_key_path)
+      private_key = tls_private_key.k8s_ssh_key.private_key_pem
     }
   }
 
   provisioner "local-exec" {
-    command = "ANSIBLE_HOST_KEY_CHECKING=False ANSIBLE_ASK_PASS=False ANSIBLE_BECOME_METHOD=sudo ANSIBLE_BECOME_ASK_PASS=False ansible-playbook -u ${var.user} -i '${self.public_ip},' --private-key ${var.private_key_path} multinode-k8s-cluster-on-AWS/setup-worker.yml --become -v"
+    command = "ANSIBLE_HOST_KEY_CHECKING=False ANSIBLE_ASK_PASS=False ANSIBLE_BECOME_METHOD=sudo ANSIBLE_BECOME_ASK_PASS=False ansible-playbook -u ${var.user} -i '${self.public_ip},' --private-key k8s_ssh_key.pem multinode-k8s-cluster-on-AWS/setup-worker.yml --become -v"
   }
 }
