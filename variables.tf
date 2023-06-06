@@ -34,12 +34,6 @@ variable "subnet_id" {
   default     = "subnet-0b1382acff5d2930a"
 }
 
-variable "key_name" {
-  description = "Key to be used for all nodes"
-  type        = string
-  default     = "k8s-key-ansible"
-}
-
 variable "k8s_master_volume_size" {
   description = "K8s master volume size"
   type        = string
@@ -50,18 +44,6 @@ variable "device_name" {
   description = "Device name to use for mounting on cluster nodes"
   type        = string
   default     = "/dev/xvda"
-}
-
-variable "k8s_master_name" {
-  description = "K8s master node name"
-  type        = string
-  default     = "k8s-master"
-}
-
-variable "private_key_path" {
-  description = "Path of private key (.pem)"
-  type        = string
-  default     = "/home/pi/k8s-key-ansible.pem"
 }
 
 variable "k8s_worker_ami" {
