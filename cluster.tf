@@ -203,3 +203,27 @@ resource "aws_instance" "k8s_workers" {
     command = "ANSIBLE_HOST_KEY_CHECKING=False ANSIBLE_ASK_PASS=False ANSIBLE_BECOME_METHOD=sudo ANSIBLE_BECOME_ASK_PASS=False ansible-playbook -u ${var.user} -i '${self.public_ip},' --private-key k8s_ssh_key.pem multinode-k8s-cluster-on-AWS/setup-worker.yml --become -v"
   }
 }
+
+
+#Checking cluster status and details
+resource "null_resource" "check_cluster_details" {
+  depends_on = [
+    aws_instance.k8s_workers
+  ]
+
+  provisioner "remote-exec" {
+    inline = [
+      "sleep 10",
+      "sudo kubectl cluster-info",
+      "sudo kubectl get nodes -o wide",
+      "sudo kubectl get all --all-namespaces"
+    ]
+  }
+
+  connection {
+    host = aws_instance.k8s_master.public_ip
+    type = "ssh"
+    user = var.user
+    private_key = tls_private_key.k8s_ssh_key.private_key_pem
+  }
+}
