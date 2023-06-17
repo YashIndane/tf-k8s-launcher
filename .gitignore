@@ -1,0 +1,15 @@
+#Ignoring sensative terraform files and folders
+*.auto.tfvars
+.terraform/
+.terraformrc
+*.tfstate
+*.pem
+terraform.tfstate.backup
+terraform.tfstate
+.terraform.lock.hcl
+
+#Ignoring K8S cluster join token file
+token_file.txt
+
+#Ignoring private key file
+k8s_ssh_key.pem
