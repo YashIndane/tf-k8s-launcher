@@ -1,0 +1,51 @@
+name: Launching K8s cluster
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  launch-cluster:
+    name: launch-cluster
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+      AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
+
+    steps:
+      - name: Clone Repo
+        uses: actions/checkout@v1
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - name: Setup Ansible And Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible==2.10.7 ansible-lint==6.0.2 jsondiff==2.0.0 passlib==1.7.4 PyYAML==5.3.1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Initialize Terraform
+        run: terraform init
+
+      - name: Format Terraform Code
+        run: terraform fmt
+
+      - name: Validate Terraform Code
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: |
+          terraform plan -var="access_key=${AWS_ACCESS_KEY}" -var="secret_key=${AWS_SECRET_KEY}" -no-color -out cluster.tfplan
+
+      - name: Create K8S Cluster
+        run: terraform apply cluster.tfplan -no-color
+
+      - name: Destroy K8S Cluster
+        run: terraform destroy -no-color -auto-approve
+
