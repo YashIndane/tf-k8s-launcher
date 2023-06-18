@@ -92,7 +92,7 @@
     path: $HOME/.kube/config
     owner: "{{ ansible_effective_user_id }}"
     group: "{{ ansible_effective_group_id }}"
-    mode: 0644
+    mode: u=rw,g=r,o=r
 
 - name: "Creating cluster join token file"
   ansible.builtin.command:
