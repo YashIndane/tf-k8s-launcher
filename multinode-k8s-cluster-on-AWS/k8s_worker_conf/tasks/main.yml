@@ -84,7 +84,7 @@
       net.bridge.bridge-nf-call-iptables=1
     state: present
 
-- name: "Joining cluster" 
+- name: "Joining cluster"
   ansible.builtin.command:
     cmd: "{{ item.command }}"
 

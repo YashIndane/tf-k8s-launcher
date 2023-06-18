@@ -1,4 +1,5 @@
 ---
-- hosts: all
+- name: "Configure K8s Master Node"
+  hosts: all
   roles:
     - role: k8s_master_conf
