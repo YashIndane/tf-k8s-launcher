@@ -1,56 +1,58 @@
 ---
 # tasks file for k8s_worker_conf
-- name: "installing docker"
-  package:
+- name: "Installing docker"
+  ansible.builtin.package:
     name: "docker"
     state: present
 
-- name: "starting and enabling docker"
-  service:
-    enabled: yes
+- name: "Starting and enabling docker"
+  ansible.builtin.service:
+    enabled: true
     name: "docker"
-    state: started 
+    state: started
 
-- name: "configuring yum for kubeadm"
-  yum_repository:
+- name: "Configuring yum for kubeadm"
+  ansible.builtin.yum_repository:
     name: "kubernetes"
     description: "repo for kubernetes"
     baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-\$basearch
-    enabled: yes
-    repo_gpgcheck: yes
-    gpgcheck: yes
-    gpgkey: 
+    enabled: true
+    repo_gpgcheck: true
+    gpgcheck: true
+    gpgkey:
       - "https://packages.cloud.google.com/yum/doc/yum-key.gpg"
       - "https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg"
 
-- name: "installing kubelet, kubeadm & kubectl"
-  yum:
+- name: "Installing kubelet, kubeadm & kubectl"
+  ansible.builtin.yum:
     name: "{{ item.package_name }}"
     disable_excludes: "kubernetes"
-    state: present 
- 
+    state: present
+
   loop:
     - { package_name: "kubelet" }
     - { package_name: "kubeadm" }
     - { package_name: "kubectl" }
 
-- name: "starting and enabling kubelet"
-  service:
-    enabled: yes
+- name: "Starting and enabling kubelet"
+  ansible.builtin.service:
+    enabled: true
     name: "kubelet"
     state: started
 
-- name: "pulling images ..."
-  shell:
+- name: "Pulling images ..."
+  ansible.builtin.command:
     cmd: "kubeadm config images pull"
+  changed_when: false
 
-- name: "creating daemon.js"
-  file:
+- name: "Creating daemon.js"
+  ansible.builtin.file:
     path: "/etc/docker/daemon.js"
     state: touch
+    mode: u=rwx,g=rwx,o=rwx
 
-- name: "changing docker driver to systemd"
-  blockinfile:
+- name: "Changing docker driver to systemd"
+  ansible.builtin.blockinfile:
     path: "/etc/docker/daemon.js"
     block: |
       {
@@ -58,23 +60,24 @@
       }
     state: present
 
-- name: "restarting docker"
-  service:
+- name: "Restarting docker"
+  ansible.builtin.service:
     name: "docker"
     state: restarted
 
-- name: "installing iproute-tc"
-  package:
+- name: "Installing iproute-tc"
+  ansible.builtin.package:
     name: "iproute-tc"
     state: present
 
-- name: "creating k8s.conf"
-  file:
+- name: "Creating k8s.conf"
+  ansible.builtin.file:
     path: "/etc/sysctl.d/k8s.conf"
     state: touch
+    mode: u=rwx,g=rwx,o=rwx
 
-- name: "configuring ip tables..."
-  blockinfile:
+- name: "Configuring ip tables..."
+  ansible.builtin.blockinfile:
     path: "/etc/sysctl.d/k8s.conf"
     block: |
       net.bridge.bridge-nf-call-ip6tables=1
@@ -82,8 +85,12 @@
     state: present
 
 - name: "Joining cluster" 
-  shell:
+  ansible.buitin.command:
     cmd: "{{ item.command }}"
+
   loop:
     - { command: "sysctl --system" }
-    - { command: "{{lookup('ansible.builtin.file', '../../../token_file.txt') }}" }
+    - { command: "{{ lookup('ansible.builtin.file', '../../../token_file.txt') }}" }
+
+  changed_when: false
+
