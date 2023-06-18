@@ -1,3 +1,5 @@
+#This workflow lints ansible code and launches the K8S cluster.
+
 name: Launching K8s cluster
 
 on:
@@ -5,9 +7,25 @@ on:
     branches: [ main ]
 
 jobs:
+  ansible-lint:
+    name: ansible-lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clone Repo
+        uses: actions/checkout@v1
+
+      - name: Lint Ansible Code
+        uses: ansible/ansible-lint-action@v6
+        with:
+          targets: |
+            multinode-k8s-cluster-on-AWS/k8s_master_conf/tasks/main.yml
+            multinode-k8s-cluster-on-AWS/k8s_worker_conf/tasks/main.yml
+
   launch-cluster:
     name: launch-cluster
     runs-on: ubuntu-latest
+    needs: ansible-lint
 
     env:
       AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}

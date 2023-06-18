@@ -82,8 +82,8 @@
 
   loop:
     - { command: "kubeadm init --pod-network-cidr=10.244.0.0/16 --ignore-preflight-errors=NumCPU --ignore-preflight-errors=Mem" }
-    - { command: "mkdir -p $HOME/.kube" }
-    - { command: "sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config" }
+    - { command: "mkdir -p /root/.kube" }
+    - { command: "sudo cp -i /etc/kubernetes/admin.conf /root/.kube/config" }
 
   changed_when: false
 
@@ -94,14 +94,22 @@
     group: "{{ ansible_effective_group_id }}"
     mode: u=rw,g=r,o=r
 
+- name: "Applying flannel config"
+  ansible.builtin.command:
+    cmd: "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml"
+  changed_when: false
+
+- name: "Creating cluster join automation file"
+  ansible.builtin.copy:
+    dest: "/home/ec2-user/cj-automation.sh"
+    content: |
+      #!/bin/bash
+      kubeadm token create --print-join-command > /home/ec2-user/token_file.txt
+    mode: u=rwx,g=rwx,o=rwx
+
 - name: "Creating cluster join token file"
   ansible.builtin.command:
-    cmd: "{{ item.command }}"
-
-  loop:
-    - { command: "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml" }
-    - { command: "kubeadm token create --print-join-command > token_file.txt" }
-
+    cmd: "sh /home/ec2-user/cj-automation.sh"
   changed_when: false
 
 - name: "Fetching cluster join token file"
