@@ -221,9 +221,9 @@ resource "null_resource" "check_cluster_details" {
   }
 
   connection {
-    host = aws_instance.k8s_master.public_ip
-    type = "ssh"
-    user = var.user
+    host        = aws_instance.k8s_master.public_ip
+    type        = "ssh"
+    user        = var.user
     private_key = tls_private_key.k8s_ssh_key.private_key_pem
   }
 }

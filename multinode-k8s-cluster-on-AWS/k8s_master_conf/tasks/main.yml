@@ -1,56 +1,58 @@
 ---
 # tasks file for k8s_master_conf
-- name: "installing docker"
-  package:
+- name: "Installing docker"
+  ansible.builtin.package:
     name: "docker"
     state: present
 
-- name: "starting and enabling docker"
-  service:
-    enabled: yes
+- name: "Starting and enabling docker"
+  ansible.builtin.service:
+    enabled: true
     name: "docker"
-    state: started 
+    state: started
 
-- name: "configuring yum for kubeadm"
-  yum_repository:
+- name: "Configuring yum for kubeadm"
+  ansible.builtin.yum_repository:
     name: "kubernetes"
     description: "repo for kubernetes"
     baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-\$basearch
-    enabled: yes
-    repo_gpgcheck: yes
-    gpgcheck: yes
-    gpgkey: 
+    enabled: true
+    repo_gpgcheck: true
+    gpgcheck: true
+    gpgkey:
       - "https://packages.cloud.google.com/yum/doc/yum-key.gpg"
       - "https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg"
 
-- name: "installing kubelet, kubeadm & kubectl"
-  yum:
+- name: "Installing kubelet, kubeadm & kubectl"
+  ansible.builtin.yum:
     name: "{{ item.package_name }}"
     disable_excludes: "kubernetes"
-    state: present 
- 
+    state: present
+
   loop:
     - { package_name: "kubelet" }
     - { package_name: "kubeadm" }
     - { package_name: "kubectl" }
 
-- name: "starting and enabling kubelet"
-  service:
-    enabled: yes
+- name: "Starting and enabling kubelet"
+  ansible.builtin.service:
+    enabled: true
     name: "kubelet"
     state: started
 
-- name: "pulling images ..."
-  shell:
+- name: "Pulling images ..."
+  ansible.builtin.command:
     cmd: "kubeadm config images pull"
+  changed_when: false
 
-- name: "creating daemon.js"      
-  file:
+- name: "Creating daemon.js"
+  ansible.builtin.file:
     path: "/etc/docker/daemon.js"
     state: touch
+    mode: u=rwx,g=rwx,o=rwx
 
-- name: "changing docker driver to systemd"
-  blockinfile:
+- name: "Changing docker driver to systemd"
+  ansible.builtin.blockinfile:
     path: "/etc/docker/daemon.js"
     block: |
       {
@@ -58,36 +60,60 @@
       }
     state: present
 
-- name: "restarting docker"
-  service:
+- name: "Restarting docker"
+  ansible.builtin.service:
     name: "docker"
     state: restarted
 
-- name: "installing iproute-tc"
-  package:
+- name: "Installing iproute-tc"
+  ansible.builtin.package:
     name: "iproute-tc"
     state: present
 
-- name: "configuring bridge-nf-call-iptables"      
-  lineinfile:
+- name: "Configuring bridge-nf-call-iptables"
+  ansible.builtin.lineinfile:
     path: "/proc/sys/net/bridge/bridge-nf-call-iptables"
     line: "1"
     state: present
 
-- name: "initializing ..."
-  shell:
+- name: "Initializing ..."
+  ansible.builtin.command:
     cmd: "{{ item.command }}"
-    
+
   loop:
     - { command: "kubeadm init --pod-network-cidr=10.244.0.0/16 --ignore-preflight-errors=NumCPU --ignore-preflight-errors=Mem" }
-    - { command: "mkdir -p $HOME/.kube" }
-    - { command: "sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config" }
-    - { command: "sudo chown $(id -u):$(id -g) $HOME/.kube/config" }
-    - { command: "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml" }
-    - { command: "kubeadm token create --print-join-command > token_file.txt" }
+    - { command: "mkdir -p /root/.kube" }
+    - { command: "sudo cp -i /etc/kubernetes/admin.conf /root/.kube/config" }
 
-- name: "fetching cluster join token file"
-  fetch:
+  changed_when: false
+
+- name: "Changing permissions for .kube/config"
+  ansible.builtin.file:
+    path: $HOME/.kube/config
+    owner: "{{ ansible_effective_user_id }}"
+    group: "{{ ansible_effective_group_id }}"
+    mode: u=rw,g=r,o=r
+
+- name: "Applying flannel config"
+  ansible.builtin.command:
+    cmd: "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml"
+  changed_when: false
+
+- name: "Creating cluster join automation file"
+  ansible.builtin.copy:
+    dest: "/home/ec2-user/cj-automation.sh"
+    content: |
+      #!/bin/bash
+      kubeadm token create --print-join-command > /home/ec2-user/token_file.txt
+    mode: u=rwx,g=rwx,o=rwx
+
+- name: "Creating cluster join token file"
+  ansible.builtin.command:
+    cmd: "sh /home/ec2-user/cj-automation.sh"
+  changed_when: false
+
+- name: "Fetching cluster join token file"
+  ansible.builtin.fetch:
     src: "/home/ec2-user/token_file.txt"
     dest: "../"
     flat: true

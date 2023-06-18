@@ -1,4 +1,5 @@
 ---
-- hosts: all
+- name: "Configuring K8s Worker Nodes"
+  hosts: all
   roles:
     - role: k8s_worker_conf

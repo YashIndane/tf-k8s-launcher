@@ -1,5 +1,1 @@
 ---
-- hosts: localhost
-  remote_user: root
-  roles:
-    - k8s_master_conf
