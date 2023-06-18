@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v1
 
       - name: Lint Ansible Code
-        uses: ansible/ansible-lint-action@v6
+        uses: ansible/ansible-lint-action@v5
         with:
           targets: |
             multinode-k8s-cluster-on-AWS/k8s_master_conf/tasks/main.yml
