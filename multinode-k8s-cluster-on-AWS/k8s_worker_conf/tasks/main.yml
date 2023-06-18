@@ -93,4 +93,3 @@
     - { command: "{{ lookup('ansible.builtin.file', '../../../token_file.txt') }}" }
 
   changed_when: false
-
