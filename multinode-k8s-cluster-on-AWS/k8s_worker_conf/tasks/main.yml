@@ -85,7 +85,7 @@
     state: present
 
 - name: "Joining cluster" 
-  ansible.buitin.command:
+  ansible.builtin.command:
     cmd: "{{ item.command }}"
 
   loop:
