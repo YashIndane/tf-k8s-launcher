@@ -84,7 +84,21 @@
     - { command: "kubeadm init --pod-network-cidr=10.244.0.0/16 --ignore-preflight-errors=NumCPU --ignore-preflight-errors=Mem" }
     - { command: "mkdir -p $HOME/.kube" }
     - { command: "sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config" }
-    - { command: "sudo chown $(id -u):$(id -g) $HOME/.kube/config" }
+
+  changed_when: false
+
+- name: "Changing permissions for .kube/config"
+  ansible.builtin.file:
+    path: $HOME/.kube/config
+    owner: "{{ ansible_effective_user_id }}"
+    group: "{{ ansible_effective_group_id }}"
+    mode: 0644
+
+- name: "Creating cluster join token file"
+  ansible.builtin.command:
+    cmd: "{{ item.command }}"
+
+  loop:
     - { command: "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml" }
     - { command: "kubeadm token create --print-join-command > token_file.txt" }
 
