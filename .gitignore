@@ -13,3 +13,6 @@ token_file.txt
 
 #Ignoring private key file
 k8s_ssh_key.pem
+
+#Ignoring admin.conf file
+admin.conf

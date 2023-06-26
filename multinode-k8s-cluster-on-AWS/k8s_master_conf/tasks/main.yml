@@ -76,16 +76,45 @@
     line: "1"
     state: present
 
-- name: "Initializing ..."
+- name: "Getting public IP of master node"
+  ansible.builtin.uri:
+    url: "http://169.254.169.254/latest/meta-data/public-ipv4"
+    return_content: true
+  register: master_node_public_ip
+
+- name: "Building cluster init file"
+  ansible.builtin.copy:
+    dest: "/home/ec2-user/cluster-init.sh"
+    content: |
+      #!/bin/bash
+      kubeadm init \
+      --apiserver-cert-extra-sans={{ master_node_public_ip.content }} \
+      --pod-network-cidr=10.244.0.0/16 \
+      --ignore-preflight-errors=NumCPU \
+      --ignore-preflight-errors=Mem
+    mode: u=rwx,g=rwx,o=rwx
+
+- name: "Initializing..."
+  ansible.builtin.command:
+    cmd: "sh /home/ec2-user/cluster-init.sh"
+  changed_when: false
+
+- name: "Making .kube directory"
   ansible.builtin.command:
     cmd: "{{ item.command }}"
 
   loop:
-    - { command: "kubeadm init --pod-network-cidr=10.244.0.0/16 --ignore-preflight-errors=NumCPU --ignore-preflight-errors=Mem" }
     - { command: "mkdir -p /root/.kube" }
     - { command: "sudo cp -i /etc/kubernetes/admin.conf /root/.kube/config" }
+    - { command: "sudo cp -i /etc/kubernetes/admin.conf /home/ec2-user/admin.conf" }
 
   changed_when: false
+
+- name: "Replacing private with public IP of master in admin.conf"
+  ansible.builtin.replace:
+    path: "/home/ec2-user/admin.conf"
+    regexp: "{{ ansible_default_ipv4.address }}"
+    replace: "{{ master_node_public_ip.content }}"
 
 - name: "Changing permissions for .kube/config"
   ansible.builtin.file:
@@ -115,5 +144,11 @@
 - name: "Fetching cluster join token file"
   ansible.builtin.fetch:
     src: "/home/ec2-user/token_file.txt"
+    dest: "../"
+    flat: true
+
+- name: "Fetching admin.conf file"
+  ansible.builtin.fetch:
+    src: "/home/ec2-user/admin.conf"
     dest: "../"
     flat: true

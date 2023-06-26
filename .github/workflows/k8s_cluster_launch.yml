@@ -12,6 +12,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - run: |
+          date
+          hostname
+          pwd
+          whoami
+
       - name: Clone Repo
         uses: actions/checkout@v1
 
@@ -32,6 +38,12 @@ jobs:
       AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
 
     steps:
+      - run: |
+          date
+          hostname
+          pwd
+          whoami
+
       - name: Clone Repo
         uses: actions/checkout@v1
 
@@ -44,6 +56,13 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install ansible==2.10.7 ansible-lint==6.0.2 jsondiff==2.0.0 passlib==1.7.4 PyYAML==5.3.1
+
+      - name: Install kubectl
+        run: |
+          curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.27.1/2023-04-19/bin/linux/amd64/kubectl
+          chmod +x ./kubectl
+          mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$HOME/bin:$PATH
+          kubectl version --short --client
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -60,9 +79,37 @@ jobs:
       - name: Terraform Plan
         run: |
           terraform plan -var="access_key=${AWS_ACCESS_KEY}" -var="secret_key=${AWS_SECRET_KEY}" -no-color -out cluster.tfplan
+          cat cluster.tfplan
 
       - name: Create K8S Cluster
         run: terraform apply cluster.tfplan -no-color
+
+      - name: Get Ready Nodes Count
+        id: get_ready_nodes
+        run: |
+          cp admin.conf ./tests/
+          rn=`sh ./tests/nodes-status.sh`
+          echo "::set-output name=rn::$rn"
+
+      - name: Checking Number of Ready Nodes
+        if: ${{ steps.get_ready_nodes.outputs.rn < 3 }}
+        uses: actions/github-script@v3
+        with:
+          script: |
+            core.setFailed('Nodes not ready')
+
+      - name: Get Running Core Objects Count
+        id: get_obj
+        run: |
+          gob=`sh ./tests/core-objects-status.sh`
+          echo "::set-output name=gob::$gob"
+
+      - name: Check Number of Running Core Objects
+        if: ${{ steps.get_obj.outputs.gob < 12 }}
+        uses: actions/github-script@v3
+        with:
+          script: |
+            core.setFailed('Objects not running')
 
       - name: Destroy K8S Cluster
         run: terraform destroy -no-color -auto-approve

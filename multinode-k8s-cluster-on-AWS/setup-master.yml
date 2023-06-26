@@ -1,5 +1,6 @@
 ---
 - name: "Configure K8s Master Node"
   hosts: all
+  gather_facts: true
   roles:
     - role: k8s_master_conf
