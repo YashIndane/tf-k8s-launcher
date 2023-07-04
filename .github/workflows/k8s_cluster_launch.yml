@@ -111,6 +111,10 @@ jobs:
           script: |
             core.setFailed('Objects not running')
 
+      - name: Cleaning up sensitive files
+        run: |
+          rm -rf admin.conf k8s_ssh_key.pem token_file.txt
+
       - name: Destroy K8S Cluster
         run: terraform destroy -no-color -auto-approve
 
