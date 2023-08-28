@@ -118,3 +118,90 @@ jobs:
       - name: Destroy K8S Cluster
         run: terraform destroy -no-color -auto-approve
 
+  build_arm_image:
+    name: build_arm_image
+    runs_on: ubuntu-22.04
+    needs: launch-cluster
+    
+    env:
+      DOCKER_REGISTRY: docker.io
+      DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/tf-k8s-launcher-arm
+      DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKERHUB_AT }}
+
+    steps:
+      - name: Clone Repo
+        uses: actions/checkout@v1
+
+      - name: Set Up Docker Buildx
+        uses: crazy-max/ghaction-docker-buildx@v1
+        with:
+          buildx-version: latest
+
+      - name: Prepare
+        if: success()
+        id: prepare
+        run: |
+          echo "platform=${TARGET_PLATFORM}" >> $GITHUB_OUTPUT
+          echo "docker_image_tag=${DOCKER_REGISTRY}/${DOCKER_IMAGE}" >> $GITHUB_OUTPUT
+          echo "version=${GITHUB_RUN_NUMBER}" >> $GITHUB_OUTPUT
+
+      - name: Login To DockerHub
+        if: success()
+        run: |
+          echo "${DOCKER_PASSWORD}" | docker login ${DOCKER_REGISTRY} --username "${DOCKER_USERNAME}" --password-stdin
+
+      - name: Run Buildx (Push image to DockerHub)
+        if: success()
+        run: |
+          docker buildx build --platform ${{ steps.prepare.outputs.platform }} -t ${{ steps.prepare.outputs.docker_image_tag }}:${{ steps.prepare.outputs.version }} --output type=image,push=true -f ./dockerfiles/arm64/Dockerfile
+
+  build_amd64_image:
+    name: build_amd64_image
+    runs_on: ubuntu-latest
+    needs: build_arm_image
+
+    permissions:
+      contents: read
+      packages: write
+
+    env:
+      #DockerHub
+      DOCKER_REGISTRY: docker.io
+      DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/tf-k8s-launcher
+      DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKERHUB_AT }}
+
+      #Github Container Repo
+      GHCR_REGISTRY: ghcr.io
+      GHCR_IMAGE: yashindane/tf-k8s-launcher
+      GHCR_USERNAME: ${{ github.actor }}
+      GHCR_PASSWORD: ${{ secrets.TOK }}
+
+    steps:
+      - name: Clone Repo
+        uses: actions/checkout@v1
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${DOCKER_USERNAME}
+          password: ${DOCKER_PASSWORD}
+
+      - name: Build The Image
+        run: |
+          docker build -t ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${GITHUB_RUN_NUMBER} -f ./dockerfiles/amd64/Dockerfile
+
+      - name: Push Image To DockerHub
+        run: |
+          docker push ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${GITHUB_RUN_NUMBER}
+
+      - name: Login To GHCR
+        uses: docker/login-action@v1
+        with:
+          username: ${GHCR_USERNAME}
+          password: ${GHCR_PASSWORD}
+
+      - name: Push Image To GHCR
+        run: |
+          docker push ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${GITHUB_RUN_NUMBER}

@@ -1,0 +1,27 @@
+#Ignore git and cache folders
+.git
+.cache
+
+#Ignore markdowns
+README.md
+
+#Ignore dockerignore itself
+.dockerignore
+
+#Ignore gitignore
+.gitignore
+
+#Ignore Dockerfiles
+dockerfiles/
+
+#Ignore LICENSE
+LICENSE
+
+#Ignore Code of Conduct
+CODE_OF_CONDUCT.md
+
+#Ignore Security md
+SECURITY.md
+
+#Ignore tests
+tests/
