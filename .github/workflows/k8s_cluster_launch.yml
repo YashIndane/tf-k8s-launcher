@@ -120,7 +120,7 @@ jobs:
 
   build_arm_image:
     name: build_arm_image
-    runs_on: ubuntu-22.04
+    runs-on: ubuntu-22.04
     needs: launch-cluster
     
     env:
@@ -158,7 +158,7 @@ jobs:
 
   build_amd64_image:
     name: build_amd64_image
-    runs_on: ubuntu-latest
+    runs-on: ubuntu-latest
     needs: build_arm_image
 
     permissions:

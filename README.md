@@ -13,7 +13,7 @@ $ sudo docker pull --platform linux/arm64/v8 docker.io/yashindane/tf-k8s-launche
 
 ### Launching The K8S Cluster
 ```
-$ sudo docker run -dit --name <CONTAINER_NAME> yashindane/tf-k8s-launcher:version -a <WORKER_NODE_COUNT> -b '<ACCESS_KEY>' -c '<SECRET_KEY>' -d '<AWS_REGION>' -e '<K8S_MASTER_AMI>' -f '<K8S_MASTER_INSTANCE_TYPE>' -g '<SUBNET_ID>' -h '<K8S_MASTER_VOLUME_SIZE>' -i '<DEVICE_NAME>' -j '<K8S_WORKER_AMI>' -k '<K8S_WORKER_INSTANCE_TYPE>' -l '<K8S_WORKER_VOLUME_SIZE>' -m '<USER>'
+$ sudo docker run --platform linux/arm64/v8 -dit --name <CONTAINER_NAME> yashindane/tf-k8s-launcher:version -a <WORKER_NODE_COUNT> -b '<ACCESS_KEY>' -c '<SECRET_KEY>' -d '<AWS_REGION>' -e '<K8S_MASTER_AMI>' -f '<K8S_MASTER_INSTANCE_TYPE>' -g '<SUBNET_ID>' -h '<K8S_MASTER_VOLUME_SIZE>' -i '<DEVICE_NAME>' -j '<K8S_WORKER_AMI>' -k '<K8S_WORKER_INSTANCE_TYPE>' -l '<K8S_WORKER_VOLUME_SIZE>' -m '<USER>'
 ```
 
 | Flag | Description |
