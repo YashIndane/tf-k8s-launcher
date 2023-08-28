@@ -136,6 +136,7 @@ jobs:
       DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/tf-k8s-launcher-arm
       DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKERHUB_AT }}
+      TARGET_PLATFORM: linux/arm64/v8
 
     steps:
       - run: |
