@@ -169,7 +169,7 @@ jobs:
       - name: Run Buildx (Push image to DockerHub)
         if: success()
         run: |
-          docker buildx build --platform ${{ steps.prepare.outputs.platform }} -t ${{ steps.prepare.outputs.docker_image_tag }}:${{ steps.prepare.outputs.version }} --output type=image,push=true -f ./dockerfiles/arm64/Dockerfile
+          docker buildx build --platform ${{ steps.prepare.outputs.platform }} -t ${{ steps.prepare.outputs.docker_image_tag }}:${{ steps.prepare.outputs.version }} --output type=image,push=true -f ./dockerfiles/arm64/Dockerfile .
 
   build_amd64_image:
     name: build_amd64_image
@@ -211,7 +211,7 @@ jobs:
 
       - name: Build The Image
         run: |
-          docker build -t ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${GITHUB_RUN_NUMBER} -f ./dockerfiles/amd64/Dockerfile
+          docker build -t ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${GITHUB_RUN_NUMBER} -f ./dockerfiles/amd64/Dockerfile .
 
       - name: Push Image To DockerHub
         run: |
