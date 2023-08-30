@@ -206,23 +206,23 @@ jobs:
       - name: Login to DockerHub
         uses: docker/login-action@v1
         with:
-          username: ${DOCKER_USERNAME}
-          password: ${DOCKER_PASSWORD}
+          username: "${DOCKER_USERNAME}"
+          password: "${DOCKER_PASSWORD}"
 
       - name: Build The Image
         run: |
-          docker build -t ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${GITHUB_RUN_NUMBER} -f ./dockerfiles/amd64/Dockerfile .
+          docker build -t "${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${GITHUB_RUN_NUMBER}" -f ./dockerfiles/amd64/Dockerfile .
 
       - name: Push Image To DockerHub
         run: |
-          docker push ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${GITHUB_RUN_NUMBER}
+          docker push "${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${GITHUB_RUN_NUMBER}"
 
       - name: Login To GHCR
         uses: docker/login-action@v1
         with:
-          username: ${GHCR_USERNAME}
-          password: ${GHCR_PASSWORD}
+          username: "${GHCR_USERNAME}"
+          password: "${GHCR_PASSWORD}"
 
       - name: Push Image To GHCR
         run: |
-          docker push ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${GITHUB_RUN_NUMBER}
+          docker push "${GHCR_REGISTRY}/${GHCR_IMAGE}:${GITHUB_RUN_NUMBER}"
